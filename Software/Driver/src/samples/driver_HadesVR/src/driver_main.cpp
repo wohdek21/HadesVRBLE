@@ -386,9 +386,9 @@ public:
 	HmdMatrix34_t CalcMatFromEuler(float yaw, float pitch, float roll, float IPDOffset) {
 		HmdMatrix34_t mat;
 
-		mat.m[0][0] = cos(pitch) * cos(roll);		mat.m[0][1] = sin(yaw) * sin(pitch) * cos(roll) - cos(yaw) * sin(roll);	mat.m[0][2] = cos(yaw) * sin(pitch) * cos(roll) + sin(yaw) * sin(roll);	mat.m[0][3] = IPDOffset;
-		mat.m[1][0] = cos(pitch) * sin(roll);		mat.m[1][1] = sin(yaw) * sin(pitch) * sin(roll) + cos(yaw) * cos(roll);	mat.m[1][2] = cos(yaw) * sin(pitch) * sin(roll) - sin(yaw) * cos(roll);	mat.m[1][3] = 0;
-		mat.m[2][0] = -sin(pitch);					mat.m[2][1] = sin(yaw) * cos(pitch);									mat.m[2][2] = cos(yaw) * cos(pitch);									mat.m[2][3] = 0;
+		mat.m[0][0] = cos(yaw) * cos(roll);		mat.m[0][1] = sin(pitch) * sin(yaw) * cos(roll) - cos(pitch) * sin(roll);	mat.m[0][2] = cos(pitch) * sin(yaw) * cos(roll) + sin(pitch) * sin(roll);	mat.m[0][3] = IPDOffset;
+		mat.m[1][0] = cos(yaw) * sin(roll);		mat.m[1][1] = sin(pitch) * sin(yaw) * sin(roll) + cos(pitch) * cos(roll);	mat.m[1][2] = cos(pitch) * sin(yaw) * sin(roll) - sin(pitch) * cos(roll);	mat.m[1][3] = 0;
+		mat.m[2][0] = -sin(yaw);					mat.m[2][1] = sin(pitch) * cos(yaw);									mat.m[2][2] = cos(pitch) * cos(yaw);									mat.m[2][3] = 0;
 		return mat;
 	}
 
