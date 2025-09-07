@@ -77,7 +77,7 @@ public:
 		m_flSecondsFromVsyncToPhotons = vr::VRSettings()->GetFloat( k_pch_Display_Section, k_pch_Sample_SecondsFromVsyncToPhotons_Float );
 		m_flDisplayFrequency = vr::VRSettings()->GetFloat( k_pch_Display_Section, k_pch_Sample_DisplayFrequency_Float );
 		m_fViewportZoom = vr::VRSettings()->GetFloat(k_pch_Display_Section, k_pch_Sample_ViewportZoom_Float);
-		m_fFOV = (vr::VRSettings()->GetFloat(k_pch_Display_Section, k_pch_Sample_FOV_Float) * 3.14159265358979323846 / 180); //radians
+		m_fFOV = (vr::VRSettings()->GetFloat(k_pch_Display_Section, k_pch_Sample_FOV_Float) * M_PI / 180); //radians
 		m_fDistanceBetweenLenses = vr::VRSettings()->GetFloat(k_pch_Display_Section, k_pch_Sample_DistanceBetweenLenses_Float);
 		m_fDistanceBetweenViews = vr::VRSettings()->GetFloat(k_pch_Display_Section, k_pch_Sample_DistanceBetweenViews_Float);
 		m_fDisplayWidth = vr::VRSettings()->GetFloat(k_pch_Display_Section, k_pch_Sample_DisplayWidth_Float);
@@ -88,9 +88,13 @@ public:
 		m_bDebugMode = vr::VRSettings()->GetBool(k_pch_Display_Section, k_pch_Sample_DebugMode_Bool);
 		m_displayOnDesktop = vr::VRSettings()->GetBool(k_pch_Display_Section, k_pch_Sample_DisplayOnDesktop);
 		m_displayReal = vr::VRSettings()->GetBool(k_pch_Display_Section, k_pch_Sample_DisplayReal);
-		m_displayCantAngle = ((vr::VRSettings()->GetFloat(k_pch_Display_Section, k_pch_Sample_DisplayAngle_Float) / 2) * 3.14159265358979323846 / 180); //radians
-		m_eyeRightRollAngle = (vr::VRSettings()->GetFloat(k_pch_Display_Section, k_pch_Sample_EyeRightRollAngle_Float) * 3.14159265358979323846 / 180); //radians
-		m_eyeLeftRollAngle = (vr::VRSettings()->GetFloat(k_pch_Display_Section, k_pch_Sample_EyeLeftRollAngle_Float) * 3.14159265358979323846 / 180); //radians
+
+		m_eyeRightYawAngle = (vr::VRSettings()->GetFloat(k_pch_Display_Section, k_pch_Sample_EyeRightYawAngle_Float) * M_PI / 180); //radians
+		m_eyeLeftYawAngle = (vr::VRSettings()->GetFloat(k_pch_Display_Section, k_pch_Sample_EyeLeftYawAngle_Float) * M_PI / 180); //radians
+		m_eyeRightPitchAngle = (vr::VRSettings()->GetFloat(k_pch_Display_Section, k_pch_Sample_EyeRightPitchAngle_Float) * M_PI / 180); //radians
+		m_eyeLeftPitchAngle = (vr::VRSettings()->GetFloat(k_pch_Display_Section, k_pch_Sample_EyeLeftPitchAngle_Float) * M_PI / 180); //radians
+		m_eyeRightRollAngle = (vr::VRSettings()->GetFloat(k_pch_Display_Section, k_pch_Sample_EyeRightRollAngle_Float) * M_PI / 180); //radians
+		m_eyeLeftRollAngle = (vr::VRSettings()->GetFloat(k_pch_Display_Section, k_pch_Sample_EyeLeftRollAngle_Float) * M_PI / 180); //radians
 
 		m_viewportUVOffset = vr::VRSettings()->GetFloat(k_pch_Display_Section, k_pch_Sample_ViewportPixelOffset);
 
@@ -176,8 +180,14 @@ public:
 		DriverLog("[HMD] IPD: %f\n", m_flIPD);
 
 		//Apply display angles
-		vr::VRServerDriverHost()->SetDisplayEyeToHead(HMDIndex_t, CalcMatFromEuler(m_displayCantAngle, 0, m_eyeLeftRollAngle, -(m_flIPD / 2)), CalcMatFromEuler(-m_displayCantAngle, 0, m_eyeRightRollAngle, m_flIPD / 2));
-		DriverLog("[HMD] Display cant angle is %f, calculating new eye to head matrices...", m_displayCantAngle);
+		DriverLog("[HMD] Eye angles (deg):\n");
+		DriverLog("     | Left | Right ==\n");
+		DriverLog("Yaw  | %f | %f \n", m_eyeLeftYawAngle * 57.2958, m_eyeRightYawAngle * 57.2958);
+		DriverLog("Pitch| %f | %f \n", m_eyeLeftPitchAngle * 57.2958, m_eyeRightPitchAngle * 57.2958);
+		DriverLog("Roll | %f | %f \n", m_eyeLeftRollAngle * 57.2958, m_eyeRightRollAngle * 57.2958);
+		DriverLog("[HMD] Calculating Eye to head matrices...:\n");
+		vr::VRServerDriverHost()->SetDisplayEyeToHead(HMDIndex_t, CalcMatFromEuler(m_eyeLeftYawAngle, m_eyeLeftPitchAngle, m_eyeLeftRollAngle, -(m_flIPD / 2)), CalcMatFromEuler(m_eyeRightYawAngle, m_eyeRightPitchAngle, m_eyeRightRollAngle, m_flIPD / 2));
+
 
 		
 		return VRInitError_None;
@@ -276,31 +286,60 @@ public:
 	{
 		if (m_bStereoMode) 
 		{
-			*pfTop = -tan(m_fFOV / 2);
-			*pfBottom = tan(m_fFOV / 2);
-			if (m_bIsSinglePanel == false)
+			const float h = m_fFOV * 0.5f;
+			const float v = m_fFOV * 0.5f;
+
+
+			if (!m_bIsSinglePanel)
 			{
-				*pfLeft = -tan(m_fFOV / 2);
-				*pfRight = tan(m_fFOV / 2);
-			}
-			else
-			{
-				float projectionLength = 0.25 * m_fDisplayWidth * 1 / tan(m_fFOV / 2);
-				float centerDifference = 0.25 * m_fDisplayWidth - 0.5 * m_fDistanceBetweenViews;
-				if (eEye == Eye_Left)
+				// Per-eye yaw and pitch
+				float yaw = (eEye == Eye_Left) ? m_eyeLeftYawAngle : m_eyeRightYawAngle;
+				float pitch = (eEye == Eye_Left) ? m_eyeLeftPitchAngle : m_eyeRightPitchAngle;
+
+				// If yaw & pitch are both ~0, fall back to perfectly symmetric frustum
+				const float epsilon = 1e-6f;
+				if (fabsf(yaw) < epsilon && fabsf(pitch) < epsilon)
 				{
-					*pfLeft = -((0.25 * m_fDisplayWidth + centerDifference) / projectionLength);
-					*pfRight = (0.25 * m_fDisplayWidth - centerDifference) / projectionLength;
+					*pfLeft = -tanf(h);
+					*pfRight = tanf(h);
+					*pfTop = -tanf(v);
+					*pfBottom = tanf(v);
 				}
 				else
 				{
-					*pfLeft = -((0.25 * m_fDisplayWidth - centerDifference) / projectionLength);
-					*pfRight = (0.25 * m_fDisplayWidth + centerDifference) / projectionLength;
+					//centered at yaw +- h
+					*pfLeft = tanf(yaw - h);
+					*pfRight = tanf(yaw + h);
+
+					//centered at pitch +- v
+					*pfTop = -tanf(pitch + v);
+					*pfBottom = tanf(v - pitch);
+				}
+			}
+			else
+			{	
+				// Single-panel mode
+				*pfTop = -tanf(v);
+				*pfBottom = tanf(v);
+
+				float projectionLength = 0.25f * m_fDisplayWidth / tanf(h);
+				float centerDifference = 0.25f * m_fDisplayWidth - 0.5f * m_fDistanceBetweenViews;
+
+				if (eEye == Eye_Left)
+				{
+					*pfLeft = -((0.25f * m_fDisplayWidth + centerDifference) / projectionLength);
+					*pfRight = ((0.25f * m_fDisplayWidth - centerDifference) / projectionLength);
+				}
+				else // Eye_Right
+				{
+					*pfLeft = -((0.25f * m_fDisplayWidth - centerDifference) / projectionLength);
+					*pfRight = ((0.25f * m_fDisplayWidth + centerDifference) / projectionLength);
 				}
 			}
 		}
 		else 
-		{//Mono
+		{
+			//Mono
 			*pfLeft = (float)m_nRenderWidth / m_nRenderHeight * -1;
 			*pfRight = (float)m_nRenderWidth / m_nRenderHeight;
 			*pfTop = -1.0;
@@ -425,9 +464,7 @@ private:
 	float m_feyeReliefMeters = 0.f;
 	float m_fViewportZoom;
 	float m_fFOV;
-	float m_displayCantAngle = 0.f;
-	float m_eyeRightRollAngle = 0.f;
-	float m_eyeLeftRollAngle = 0.f;
+	float m_eyeRightRollAngle, m_eyeLeftRollAngle, m_eyeRightPitchAngle, m_eyeLeftPitchAngle, m_eyeRightYawAngle, m_eyeLeftYawAngle = 0.f;
 	float m_fDistanceBetweenLenses; // distance between the center of the lenses / Unit: m
 	float m_fDistanceBetweenViews; // distance between the center of the viewports / Unit: m
 	float m_fDisplayWidth; // panel physical length / Unit: m

@@ -26,9 +26,15 @@ static const char* const k_pch_Sample_Stereo_Bool = "Stereo";
 static const char* const k_pch_Sample_DisplayOnDesktop = "IsDisplayOnDesktop";
 static const char* const k_pch_Sample_DisplayReal = "IsDisplayReal";
 static const char* const k_pch_Sample_DebugMode_Bool = "DebugMode";
-static const char* const k_pch_Sample_DisplayAngle_Float = "DisplayCantAngle";
+
+static const char* const k_pch_Sample_EyeRightYawAngle_Float = "RightEyeYawAngle";
+static const char* const k_pch_Sample_EyeRightPitchAngle_Float = "RightEyePitchAngle";
 static const char* const k_pch_Sample_EyeRightRollAngle_Float = "RightEyeRollAngle";
+
+static const char* const k_pch_Sample_EyeLeftYawAngle_Float = "LeftEyeYawAngle";
+static const char* const k_pch_Sample_EyeLeftPitchAngle_Float = "LeftEyePitchAngle";
 static const char* const k_pch_Sample_EyeLeftRollAngle_Float = "LeftEyeRollAngle";
+
 static const char* const k_pch_Sample_ViewportPixelOffset = "JankUVOffset";
 static const char* const k_pch_Sample_Mirror_Bool = "MirrorImage";
 
