@@ -945,8 +945,8 @@ EVRInitError CServerDriver_Sample::Init( vr::IVRDriverContext *pDriverContext )
 	EVRSettingsError error;
 	char transportMode[32] = { 0 };
 	vr::VRSettings()->GetString(k_pch_Driver_Section, k_pch_TransportMode_String, transportMode, sizeof(transportMode), &error);
-	if (strcmp(transportMode, "UART") == 0) {
-		DriverLog("[Init] Using UART transport");
+	if (strcmp(transportMode, "BLE") == 0) {
+		DriverLog("[Init] Using BLE transport");
 		dataTransport = new UARTTransport();
 	}
 	else if (strcmp(transportMode, "HID") == 0) {
@@ -954,8 +954,8 @@ EVRInitError CServerDriver_Sample::Init( vr::IVRDriverContext *pDriverContext )
 		dataTransport = new HIDTransport();
 	}
 	else {
-		DriverLog("[Init] Got invalid data transport (%s), falling back to HID", transportMode);
-		dataTransport = new HIDTransport();
+		DriverLog("[Init] Got invalid data transport (%s), falling back to BLE", transportMode);
+		dataTransport = new UARTTransport();
 	}
 
 	dataHandler = new CdataHandler(*dataTransport);
